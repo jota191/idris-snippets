@@ -4,19 +4,7 @@ data Exp : Type -> Type where
   ValN  : Nat  -> Exp Nat
   ValB  : Bool -> Exp Bool
   Add   : Exp Nat -> Exp Nat -> Exp Nat
-  Eq    : (Eq a) => Exp a -> Exp a -> Exp Bool
 
-
-{- CANNOT PATTERN MATCH ON TYPES-}
--- https://stackoverflow.com/questions/23220884/why-is-typecase-a-bad-thing
--- type inference, actually returning a type
--- typeOf : Exp -> Type
--- typeOf (ValN k) = Nat
--- typeOf (ValB x) = Bool
--- typeOf (Add x y) with (typeOf x)
---   typeOf (Add x y) | Nat = Nat
--- typeOf (Eq x y)
---    = Void
 
 
 -- evaluator
@@ -24,13 +12,11 @@ eval : (e : Exp a) -> a
 eval (ValN k)  = k
 eval (ValB x)  = x
 eval (Add x y) = eval x + eval y
-eval (Eq x y)  = eval x == eval y
 
 -- optimization
 optimize : Exp a -> Exp a
 optimize (Add (ValN Z) y) = optimize y
 optimize (Add a y) = Add a $ optimize y
-optimize (Eq x y) = Eq (optimize x)(optimize y) 
 optimize a = a
 
 
@@ -45,9 +31,6 @@ th_optimize_correct (Add (ValN (S k)) y)
   = rewrite th_optimize_correct y in Refl
 th_optimize_correct (Add (Add x z) y) 
   = rewrite th_optimize_correct y in Refl
-th_optimize_correct (Eq x y) 
-  = rewrite th_optimize_correct y in 
-    rewrite th_optimize_correct x in Refl
 
 
 
@@ -56,10 +39,25 @@ data EvalRel : Exp a -> a -> Type where
   EvalValN : {i : Nat} -> EvalRel (ValN i) i
   EvalValB : {b : Bool}-> EvalRel (ValB b) b
   EvalAdd  : EvalRel t i -> EvalRel u j -> EvalRel (Add t u) (i + j) 
-  EvalEq   : Eq a => {i, j : a} ->
-    EvalRel t i -> EvalRel u j -> EvalRel (Eq t u) (i == j)
 
 
 theorem_soundness : (Eq a) => {a : Type} ->
    (e : Exp a) -> (v : a) -> (eval e = v) -> EvalRel e v 
-theorem_soundness = ?hole
+theorem_soundness (ValN k) (eval (ValN k)) Refl = EvalValN
+theorem_soundness (ValB x) (eval (ValB x)) Refl = EvalValB
+theorem_soundness {a = Nat} (Add x y) (eval (Add x y)) Refl 
+  = let l = theorem_soundness {a = Nat} x (eval x) Refl
+        r = theorem_soundness {a = Nat} y (eval y) Refl
+    in EvalAdd l r
+
+
+theorem_completness :
+   (e : Exp a) -> (v : a) -> EvalRel e v -> (eval e = v)
+theorem_completness (ValN v) v EvalValN 
+  = Refl
+theorem_completness (ValB v) v EvalValB 
+  = Refl
+theorem_completness (Add y z) (i + j) (EvalAdd p q) 
+  = rewrite the (eval y = i) (theorem_completness y i p) in
+    rewrite the (eval z = j) (theorem_completness z j q) in
+    Refl
