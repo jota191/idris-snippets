@@ -65,3 +65,13 @@ t_tauto2 p (x ** pf) = \a => let aux  = a x
                              in pf aux
 
 
+
+
+-- destructors a la Martin Lof Type Theory
+
+data N = Zero | Succ N
+
+nat_elim : (p : N -> Type) -> p Zero 
+  -> ((n : N) -> p n -> p (Succ n)) -> (n : N) -> p n
+nat_elim p e f Zero = e
+nat_elim p e f (Succ n) = f n (nat_elim p e f n)
