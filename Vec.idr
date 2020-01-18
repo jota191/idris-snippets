@@ -61,3 +61,31 @@ getN {n = (S k)}  FZ    (x :: xs) = x
 getN {n = (S k)} (FS i) (_ :: xs) = getN {n = k} (the (Fin k) i) xs
 
 -- filter, using dependent product
+filter : Vec n a -> (a -> Bool) -> (m : Nat ** Vec m a)
+filter VNil p      = (0 ** VNil)
+filter (x :: xs) p = let (k ** vec) = filter xs p
+                     in if p x
+                     then (S k ** x :: vec)
+                     else (k ** vec)
+
+--to test:
+even : Nat -> Bool
+even Z     = True
+even (S n) = not $ even n
+-- filter v7 even ---->
+-- (2 ** 6 :: 4 :: VNil) : (m : Nat ** Vec m Nat)
+
+-- drop, I was going to use fin, this is the stdlib interface..
+drop : (n : Nat) -> Vec (n + m) a -> Vec m a
+drop Z xs            = xs
+drop (S k) (x :: xs) = drop k xs
+
+
+-- some theorems
+t_constail : vTail ((x :: VNil) ++ xs) = xs
+t_constail = Refl
+
+t_appDrop : (v : Vec n a) -> (w : Vec m a) -> w = drop n (v ++ w) 
+t_appDrop { n  =  Z }     VNil _ = Refl
+t_appDrop { n  =  (S k) } (x :: xs) w 
+  = rewrite t_appDrop {n = k} xs w in Refl
