@@ -74,12 +74,22 @@ t_update_eq m x v with (decEq x x)
   update_eq _ _ _ | No contra = absurd $ contra Refl
 
 
+
+-- extensionality is needed!!
+
+t_extensionality : {A, B : Type} -> (f, g : A -> B) -> (x : A)
+  -> f x = g x -> f = g
+t_extensionality = believe_me ()
+
+
 t_update_permute : (m : Mem) -> (x, y : String) 
   -> (v, w : Nat) -> Not (x = y) 
   -> update x v (update y w m) = update y w (update x v m)
 t_update_permute m x y v w pneq with (decEq x y) 
   t_update_permute _ _ _ _ _ pneq | Yes ok = absurd (pneq ok)
-  t_update_permute m x y v w pneq | No contra = cong ?refl1
-  
--- extensionality needed!!
-
+  t_update_permute m x y v w pneq | No contra 
+    = t_extensionality ?h ?k ?l
+    -- t_extensionality (update x v (update y w m)) 
+      --                  (update y w (update x v m))
+      --                  ?l
+      --                  ?lala

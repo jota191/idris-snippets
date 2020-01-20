@@ -75,3 +75,11 @@ nat_elim : (p : N -> Type) -> p Zero
   -> ((n : N) -> p n -> p (Succ n)) -> (n : N) -> p n
 nat_elim p e f Zero = e
 nat_elim p e f (Succ n) = f n (nat_elim p e f n)
+
+
+
+-- axiom of choice, in natural numbers
+choiceN : (r : Nat -> Nat -> Type) -> 
+   ((x : Nat) -> ( y : Nat ** r x y)) -> 
+   (f : (Nat -> Nat) ** ((x : Nat) -> r x (f x)))
+choiceN r f = (\n => fst (f n) ** \k => snd (f k))
